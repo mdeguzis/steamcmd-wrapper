@@ -16,6 +16,8 @@
 # Set initial vars
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
+DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
+DATE_SHORT=$(date +%Y%m%d)
 
 # source options
 while :; do
@@ -197,7 +199,11 @@ generate_steamcmd_cmd_list()
 	cat convarslisttidy|tr -d '\000-\011\013\014\016-\037'| sed 's/\[0m//g'|sed 's/\[1m//g'> convarslist
 	
 	echo "Generating output."
-	echo "ConVars:" > "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	
+	# Time stamp list
+	echo "List generated on:" > "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "${DATE_LONG}" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "ConVars:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	cat  "convarslist" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	echo "Commands:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	cat  "commandslist" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
