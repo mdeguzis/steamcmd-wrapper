@@ -15,6 +15,7 @@
 
 # Set initial vars
 DOWNLOAD_FILES="false"
+STEAMCMD_CMD_UPDATE_LIST="false"
 
 # source options
 while :; do
@@ -65,6 +66,11 @@ while :; do
 			;;
 		
 		--steamcmd-commands)
+			# Internal use only
+			if [[ "$2" == "--update-list" ]]; then
+				STEAMCMD_UPDATE_CMD_LIST="true"
+			fi
+
 			show_steamcmd_commands
 			break
 			;;
@@ -127,6 +133,17 @@ show_steamcmd_commands()
 	else
 		generate_steamcmd_cmd_list
 		less "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	fi
+	
+	# Update root listing if requested
+	if [[ "${STEAMCMD_UPDATE_CMD_LIST}" == "true" ]]; then
+
+		cp "${STEAMCMD_ROOT}/steamcmdcommands.txt" "${PWD}"
+		echo -e "\n==>Updating GitHub command listing\n"
+		git add steamcmdcommands.txt
+		git commit -m "Update steacmd command list"
+		git push origin master
+
 	fi
 }
 
