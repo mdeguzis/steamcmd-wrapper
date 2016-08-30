@@ -13,6 +13,8 @@
 #		./steamcmd-utility.sh [-h|--help]
 
 # Set initial vars
+STEAMCMD_ROOT="${HOME}/steamcmd"
+SERVER_ROOT="${STEAMCMD_ROOT}/servers"
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
 STEAMCMD_REQUIRED="false"
@@ -22,16 +24,13 @@ DATE_SHORT=$(date +%Y%m%d)
 
 detect_steamcmd()
 {
-
-	# Set root dirs
-	STEAMCMD_ROOT="${HOME}/steamcmd"
-	SERVER_ROOT="${STEAMCMD_ROOT}/servers"
-
+	# A stub for now
 	if [[ ! -f "${STEAMCMD_ROOT}/steamcmd.sh" ]]; then
 
 		install_steamcmd
 
 	fi
+
 }
 
 install_steamcmd()
