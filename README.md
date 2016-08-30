@@ -4,6 +4,7 @@ A SteamCMD CLI wrapper for GNU/Linux systems. This is very much a WIP right now.
 
 # Informational Links
 
+* [SteamCMD (Valve)](https://developer.valvesoftware.com/wiki/SteamCMD)
 * [Free to Play games](http://store.steampowered.com/genre/Free%20to%20Play/)
 * [Steam mods](http://store.steampowered.com/search/?category1=997)
 * [Steam demos](http://store.steampowered.com/search/?category1=10)
