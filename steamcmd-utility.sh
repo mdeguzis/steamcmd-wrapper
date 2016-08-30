@@ -16,6 +16,7 @@
 # Set initial vars
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
+STEAMCMD_REQUIRED="false"
 GAME_SERVER="false"
 DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
 DATE_SHORT=$(date +%Y%m%d)
@@ -109,6 +110,20 @@ install_steamcmd()
 	
 }
 
+reset_steamcmd()
+{
+
+	# Cleans out metadata cruft
+	echo -e "\n==> Reinstalling steamcmd" && sleep 2s
+	# Backup
+	cp -r "${HOME}/.steam" "${HOME}/.steam.bak"
+	# Remove
+	rm -rf "${STEAMCMD_ROOT}/Steam/" "$HOME/.steam" "${STEAMCMD_ROOT}/steamcmd_tmp"
+	# Reinstall
+	install_steamcmd
+
+}
+
 show_steamcmd_commands()
 {
 	# Show existing list if already generated
@@ -137,6 +152,9 @@ generate_steamcmd_cmd_list()
 	# Imported code from https://github.com/dgibbs64/SteamCMD-Commands-List
 	# Credit:github.com/dgibbs64/
 	# Updated: 20160830
+	
+	# Detect steacmd (required)
+	detect_steamcmd
 	
 	cat<<-EOF
 	
@@ -347,11 +365,18 @@ install_game_server()
 while :; do
 	case $1 in
 
+		--reset-steamcmd|-r)
+			# Very useful if you restore SteamoS.
+			reset_steamcmd
+			;;
+
 		--get|-g)
+			STEAMCMD_REQUIRED="true"
 			DOWNLOAD_FILES="true"
 			;;
 
 		--game-server|s)
+			STEAMCMD_REQUIRED="true"
 			GAME_SERVER="true"
 			;;
 
@@ -389,13 +414,6 @@ while :; do
 			fi
 			;;
 
-		--reset-steamcmd|-r)
-			# Very useful if you restore SteamoS.
-			# Cleans out metadata cruft
-			echo -e "\n==> Reinstalling steamcmd" && sleep 2s
-			rm -rf "$HOME/Steam/" "$HOME/steamcmd" "$HOME/.steam" "$HOME/steamcmd_tmp"
-			;;
-
 		--steamcmd-commands)
 			# Internal use only
 			if [[ "$2" == "--update-list" ]]; then
@@ -406,7 +424,7 @@ while :; do
 			break
 			;;
 
-		--help|-h) 
+		--help|-h)
 			cat<<-EOF
 
 			Usage:	 ./steamcmd-utility.sh [options]
@@ -451,7 +469,7 @@ main()
 	#################################################
 
 	# Execute steamcmd for outlined functions
-
+	
 	if [[ ${DOWNLOAD_FILES} == "true " ]]; then
 
 		detect_steamcmd
