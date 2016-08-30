@@ -125,7 +125,7 @@ install_steamcmd()
 	
 	# Check Distro
 	# Use lsb_release and /etc/*-release as a backup
-	DISTRO_CHECK=$(lsb_relese -si)
+	DISTRO_CHECK=$(lsb_release -si)
 
 	if [[ "${DISTRO_CHECK}" == "" ]]; then
 
