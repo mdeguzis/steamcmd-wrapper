@@ -129,6 +129,8 @@ show_steamcmd_commands()
 	if [[ -f "${STEAMCMD_ROOT}/steamcmdcommands.txt" ]]; then
 		less "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	else
+		echo -e "\nERROR: SteamCMD command list file not found. Generating...\n"
+		sleep 2s
 		generate_steamcmd_cmd_list
 		less "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	fi
@@ -139,7 +141,7 @@ show_steamcmd_commands()
 		cp "${STEAMCMD_ROOT}/steamcmdcommands.txt" "${PWD}"
 		echo -e "\n==>Updating GitHub command listing\n"
 		git add steamcmdcommands.txt
-		git commit -m "Update steacmd command list"
+		git commit -m "Update steamcmd command list"
 		git push origin master
 
 	fi
