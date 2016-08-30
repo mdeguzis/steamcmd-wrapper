@@ -4,11 +4,11 @@ A SteamCMD CLI wrapper for GNU/Linux systems. This is very much a WIP right now.
 
 # Using steamcmd-wrapper
 
-./steamcmd-wrapper [options]
+`./steamcmd-wrapper [options]`
 
 For help and options:
 
-./steamcmd-wrapper --help
+`./steamcmd-wrapper --help`
 
 # Informational Links
 
