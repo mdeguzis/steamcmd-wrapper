@@ -20,106 +20,6 @@ GAME_SERVER="false"
 DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
 DATE_SHORT=$(date +%Y%m%d)
 
-# source options
-while :; do
-	case $1 in
-
-		--get|-g)
-			DOWNLOAD_FILES="true"
-			;;
-
-		--game-server|s)
-			GAME_SERVER="true"
-			;;
-
-		--appid|-a)
-			if [[ -n "$2" ]]; then
-				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $DIRECTORY"
-				shift
-			else
-				echo -e "ERROR: --appid|-a requires an argument.\n" >&2
-				exit 1
-			fi
-			;;
-
-		--directory|-d)       # Takes an option argument, ensuring it has been specified.
-			if [[ -n "$2" ]]; then
-				CUSTOM_DATA_PATH="true"
-				DIRECTORY=$2
-				# echo "INSTALL PATH: $DIRECTORY"
-				shift
-			else
-				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
-				exit 1
-			fi
-			;;
-
-		--platform|-p)       # Takes an option argument, ensuring it has been specified.
-			if [[ -n "$2" ]]; then
-				PLATFORM=$2
-				# echo "PLATFORM: $PLATFORM"
-				shift
-			else
-				echo -e "ERROR: --platform|-p requires an argument.\n" >&2
-				exit 1
-			fi
-			;;
-
-		--reset-steamcmd|-r)
-			# Very useful if you restore SteamoS.
-			# Cleans out metadata cruft
-			echo -e "\n==> Reinstalling steamcmd" && sleep 2s
-			rm -rf "$HOME/Steam/" "$HOME/steamcmd" "$HOME/.steam" "$HOME/steamcmd_tmp"
-			;;
-
-		--steamcmd-commands)
-			# Internal use only
-			if [[ "$2" == "--update-list" ]]; then
-				STEAMCMD_UPDATE_CMD_LIST="true"
-			fi
-
-			show_steamcmd_commands
-			break
-			;;
-
-		--help|-h) 
-			cat<<-EOF
-
-			Usage:	 ./steamcmd-utility.sh [options]
-			Options:
-				-h|--help		Help text
-				--get|-g		downloads a game
-				--game-server|s		Installs a game server
-				--appid|-a 		[AppID] 
-				--platform|-p		[Platform] 
-				--directory|-d 		[TARGET_DIR]
-				--steamcmd-commands	steamcmd command list
-
-			EOF
-			break
-			;;
-
-		--)
-		# End of all options.
-		shift
-		break
-		;;
-
-		-?*)
-		printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
-		;;
-
-		*)  
-		# Default case: If no more options then break out of the loop.
-		break
-
-	esac
-
-	# shift args
-	shift
-done
-
 detect_steamcmd()
 {
 
@@ -440,6 +340,108 @@ install_game_server()
 	fi
 }
 
+########################################
+# source options
+########################################
+
+while :; do
+	case $1 in
+
+		--get|-g)
+			DOWNLOAD_FILES="true"
+			;;
+
+		--game-server|s)
+			GAME_SERVER="true"
+			;;
+
+		--appid|-a)
+			if [[ -n "$2" ]]; then
+				GAME_APP_ID=$2
+				# echo "INSTALL PATH: $DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --appid|-a requires an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
+		--directory|-d)       # Takes an option argument, ensuring it has been specified.
+			if [[ -n "$2" ]]; then
+				CUSTOM_DATA_PATH="true"
+				DIRECTORY=$2
+				# echo "INSTALL PATH: $DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
+		--platform|-p)       # Takes an option argument, ensuring it has been specified.
+			if [[ -n "$2" ]]; then
+				PLATFORM=$2
+				# echo "PLATFORM: $PLATFORM"
+				shift
+			else
+				echo -e "ERROR: --platform|-p requires an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
+		--reset-steamcmd|-r)
+			# Very useful if you restore SteamoS.
+			# Cleans out metadata cruft
+			echo -e "\n==> Reinstalling steamcmd" && sleep 2s
+			rm -rf "$HOME/Steam/" "$HOME/steamcmd" "$HOME/.steam" "$HOME/steamcmd_tmp"
+			;;
+
+		--steamcmd-commands)
+			# Internal use only
+			if [[ "$2" == "--update-list" ]]; then
+				STEAMCMD_UPDATE_CMD_LIST="true"
+			fi
+
+			show_steamcmd_commands
+			break
+			;;
+
+		--help|-h) 
+			cat<<-EOF
+
+			Usage:	 ./steamcmd-utility.sh [options]
+			Options:
+				-h|--help		Help text
+				--get|-g		downloads a game
+				--game-server|s		Installs a game server
+				--appid|-a 		[AppID] 
+				--platform|-p		[Platform] 
+				--directory|-d 		[TARGET_DIR]
+				--steamcmd-commands	steamcmd command list
+
+			EOF
+			break
+			;;
+
+		--)
+		# End of all options.
+		shift
+		break
+		;;
+
+		-?*)
+		printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
+		;;
+
+		*)  
+		# Default case: If no more options then break out of the loop.
+		break
+
+	esac
+
+	# shift args
+	shift
+done
 
 main()
 {
