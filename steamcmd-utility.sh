@@ -3,7 +3,7 @@
 # Author:	Michael DeGuzis
 # Git:		https://github.com/ProfessorKaos64/steamcmd-wrapper
 # Scipt name:	steamcmd-utility.sh
-# Script Ver:	0.9.8
+# Script Ver:	0.3.8
 # Description:	Wrapper around steamcmd for common functions
 #		Ex. Downloads a game from Steam, based on it's AppID, useful for
 #               for on-the-go situations, or free-to-play when you can't 
