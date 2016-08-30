@@ -24,7 +24,7 @@ DATE_SHORT=$(date +%Y%m%d)
 while :; do
 	case $1 in
 
-		--get|-g
+		--get|-g)
 			DOWNLOAD_FILES="true"
 			;;
 
@@ -123,10 +123,63 @@ done
 install_steamcmd()
 {
 	
+	# Check Distro
+	DISTRO_CHECK=$(cat /etc/*-release | awk -F"=" '/DISTRIB_ID/{print $2}')
+
+	# Check for multilib
+	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" ]]; then
+
+		MULTIARCH=$(dpkg --print-foreign-architectures | grep i386)
+		if [[ "${MULTIARCH}" == "" ]]; then
+
+			echo -e "\nMultiarch not found!\n"
+			sudo dpkg --add-architecture i386
+			echo -e "Updating for multiarch\n" 
+			sleep 2s
+			sudo apt-get update
+
+		fi
+
+	elif [[ "${DISTRO_CHECK}" == "Arch" ]]; then
+
+		MULTIARCH=$(grep '\[multilib\]' /etc/pacman.conf)
+		if [[ "${MULTIARCH}" == "" ]]; then
+
+			echo -e "\nMultiarch not found!\n"
+			echo "[multilib]" | sudo tee -a "/etc/pacman.conf"
+			echo "Include = /etc/pacman.d/mirrorlist"  | "sudo tee -a /etc/pacman.conf"
+			echo -e "Updating for multiarch\n" 
+			sleep 2s
+			pacman -Syy
+
+		fi
+
+	else
+
+		# Catch non supported distros
+		echo -e "\nDistribution not currently supported!\n"
+		exit 1
+
+	fi
+
+	# Install needed packages
+	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" ]]; then
+
+		sudo apt-get install -y --force-yes lib32gcc1 libc6-i386 wget tar
+
+	elif [[ "${DISTRO_CHECK}" == "Arch" ]]; then
+
+		pacman -S wget tar grep lib32-gcc-libs
+		
+	elif [[ "${DISTRO_CHECK}" == "Fedora" ]]; then
+
+		sudo yum install wget tar glibc.i686 libstdc++.i686
+
+	fi
+	
 	# install steamcmd
 	echo -e "\n==> Installing steamcmd\n"
 	mkdir -p "${STEAMCMD_ROOT}"
-	sudo apt-get install -y lib32gcc1 
 	wget "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" -q -nc --show-progress
 	sudo tar -xf "steamcmd_linux.tar.gz" -C "${STEAMCMD_ROOT}"
 	rm -f "steamcmd_linux.tar.gz"
@@ -224,24 +277,6 @@ generate_steamcmd_cmd_list()
 	
 }
 
-check_rereqs()
-{
-
-	DISTRO_CHECK=$(lsb_release -i | cut -c 17-25)
-
-	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" ]]; then
-
-		sudo apt-get install -y --force-yes lib32gcc1 libc6-i386
-
-	else
-
-		echo -e "\nDistribution not currently supported!\n"
-		exit 1
-
-	fi
-
-}
-
 download_game_files()
 {
 	# get game files via steam (you must own the game!)
@@ -311,7 +346,7 @@ install_game_server()
 	# Simple loop to get input (if they enter it incorrectly)
 	while true
 	do 
-		read -p '> ' GAME_SERVER
+		read erp "Choice: " GAME_SERVER
 
 		# Case statement to check the input var
 
@@ -368,6 +403,8 @@ install_game_server()
 			continue
 			;;
 		esac
+		
+	done
 
 	if ${STEAMCMD_ROOT}/steamcmd.sh +login anonymous +force_install_dir ${SERVER_ROOT} \
 	+app_update ${SERVER_ID} validate +quit; then
@@ -378,7 +415,7 @@ install_game_server()
 
 		echo -e "\nServer installation failed!"
 
-	done
+	fi
 }
 
 
@@ -388,9 +425,6 @@ main()
 	#################################################
 	# Setup
 	#################################################
-
-	# Check for necessary items
-	check_rereqs
 	
 	# Set root dirs
 	STEAMCMD_ROOT="${HOME}/steamcmd"
@@ -408,11 +442,11 @@ main()
 
 	# Execute steamcmd for outlined functions
 
-	if [[ ${DOWNLOAD_FILES} == "true "]]; then
+	if [[ ${DOWNLOAD_FILES} == "true " ]]; then
 
 		download_game_files
 
-	elif [[ ${GAME_SERVER} == "true "]]; then
+	elif [[ ${GAME_SERVER} == "true" ]]; then
 	
 		# start serer installatino routine
 		install_game_server
