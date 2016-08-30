@@ -1,5 +1,6 @@
 # steamcmd-wrapper
-A CLI wrapper for GNU/Linux systems
+
+A CLI wrapper for GNU/Linux systems. This is very much a WIP right now. Feel free to contribute. The Goal to to expose commond steamcmd functions in an easy way, document the utility, and provide quick access to features.
 
 # Informational Links
 
