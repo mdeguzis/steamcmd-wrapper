@@ -11,7 +11,6 @@
 #
 # Usage:	./steamcmd-utility.sh [options]
 #		./steamcmd-utility.sh [-h|--help]
-# -------------------------------------------------------------------------------
 
 # Set initial vars
 DOWNLOAD_FILES="false"
@@ -164,7 +163,7 @@ generate_steamcmd_cmd_list()
 
 	EOF
 
-	mkdir "${STEAMCMD_ROOT}/tmp"
+	mkdir -p "${STEAMCMD_ROOT}/tmp"
 	cd "${STEAMCMD_ROOT}"
 	
 	for LETTER in {a..z}
