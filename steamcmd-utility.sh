@@ -3,7 +3,7 @@
 # Author:	Michael DeGuzis
 # Git:		https://github.com/ProfessorKaos64/steamcmd-wrapper
 # Scipt name:	steamcmd-utility.sh
-# Script Ver:	0.9.7
+# Script Ver:	0.9.8
 # Description:	Wrapper around steamcmd for common functions
 #		Ex. Downloads a game from Steam, based on it's AppID, useful for
 #               for on-the-go situations, or free-to-play when you can't 
@@ -16,6 +16,7 @@
 # Set initial vars
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
+GAME_SERVER="false"
 DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
 DATE_SHORT=$(date +%Y%m%d)
 
@@ -25,6 +26,11 @@ while :; do
 
 		--get|-g
 			DOWNLOAD_FILES="true"
+			;;
+
+		--game-server|s)
+			GAME_SERVER="true"
+			;;
 
 		--appid|-a)
 			if [[ -n "$2" ]]; then
@@ -59,14 +65,14 @@ while :; do
 				exit 1
 			fi
 			;;
-		
+
 		--reset-steamcmd|-r)
 			# Very useful if you restore SteamoS.
 			# Cleans out metadata cruft
 			echo -e "\n==> Reinstalling steamcmd" && sleep 2s
 			rm -rf "$HOME/Steam/" "$HOME/steamcmd" "$HOME/.steam" "$HOME/steamcmd_tmp"
 			;;
-		
+
 		--steamcmd-commands)
 			# Internal use only
 			if [[ "$2" == "--update-list" ]]; then
@@ -79,16 +85,17 @@ while :; do
 
 		--help|-h) 
 			cat<<-EOF
-			
+
 			Usage:	 ./steamcmd-utility.sh [options]
 			Options:
 				-h|--help		Help text
-				--get|-g		[download a game]
+				--get|-g		downloads a game
+				--game-server|s		Installs a game server
 				--appid|-a 		[AppID] 
 				--platform|-p		[Platform] 
 				--directory|-d 		[TARGET_DIR]
 				--steamcmd-commands	steamcmd command list
-			
+
 			EOF
 			break
 			;;
@@ -235,6 +242,146 @@ check_rereqs()
 
 }
 
+download_game_files()
+{
+	# get game files via steam (you must own the game!)
+	echo -e "\n==> Acquiring files via Steam. You must own the game!"
+	read -erp "    Steam username: " STEAM_LOGIN_NAME
+	echo ""
+
+	# Download
+	# steam cmd likes to put the files in the same directory as the script
+
+	if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
+
+                # let this be a default
+                # If this is not set, the path will be $HOME/Steam/steamapps/common/
+                STEAM_DATA_FILES="default directory"
+                DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/"
+
+        fi
+
+	echo -e "==> Downloading game files to: ${DIRECTORY}"
+	sleep 2s
+
+	TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
+	mkdir -p "${TEMP_DIRECTORY}"
+
+	# run steamcmd
+	# +app_license_request works around downloading free to play games
+
+	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +force_install_dir ${TEMP_DIRECTORY} \
+	+app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit; then
+
+		# Move files to actual directory
+		sudo cp -r ${TEMP_DIRECTORY}/* "${DIRECTORY}"
+		echo "\nGame successfully downloaded to ${DIRECTORY}"
+
+	else
+	
+		"Game download failed! Trying resetting steamcmd"
+
+	fi
+
+	# cleanup
+	rm -rf "${TEMP_DIRECTORY}"
+
+}
+
+install_game_server()
+{
+
+	# Main input prompt
+	cat<<-EOF
+	Please enter the game that you want to make the server of.
+	WARNING. you might have to install #7 multiple times to get the server to work
+
+	1) Team Fortress 2"
+	2) Counter-Strike: Source"
+	3) CS:GO"
+	4) Garry's Mod"
+	5) Left 4 Dead 2"
+	6) DOD:S"
+	7) Half-Life (also cs 1.6, dod, etc...)"
+	8) Other server (need steam id)"
+	
+	EOF
+
+	# Simple loop to get input (if they enter it incorrectly)
+	while true
+	do 
+		read -p '> ' GAME_SERVER
+
+		# Case statement to check the input var
+
+		case ${GAME_SERVER} in
+
+			1) echo "Now installing Team Fortress 2 server."
+			SERVER_GAME="Team Fortress 2"
+			SERVER_ID=232250
+			break
+			;;
+
+			2) echo "Now installing Counter Strike Source server."
+			SERVER_GAME="Counter-Strike Source"
+			SERVER_ID=232330
+			break
+			;;
+
+			3) echo "Now installing CS:GO server."
+			SERVER_GAME="CS:GO"
+			SERVER_ID=740
+			break
+			;;
+
+			4) echo "Now installing Garry's Mod server."
+			SERVER_GAME="Garry's Mod"
+			SERVER_ID=4020
+			break
+			;;
+
+			5) echo "Now installing Left 4 Dead 2 server."
+			SERVER_GAME="Left 4 Dead 2"
+			SERVER_ID=222860
+			break
+			;;
+
+			6) echo "Now installing DOD:S server."
+			SERVER_GAME="DOD:S"
+			SERVER_ID=232290
+			break
+			;;
+
+			7) echo "Now installing Half-Life server."
+			SERVER_GAME="Half-Life"
+			SERVER_ID=90
+			break
+			;;
+
+			8) echo "Now installing other server."
+			read -erp "Please enter a server ID: " SERVER_ID
+			break
+			;;
+
+			*) echo "Please enter a valid option."
+			continue
+			;;
+		esac
+
+	if ${STEAMCMD_ROOT}/steamcmd.sh +login anonymous +force_install_dir ${SERVER_ROOT} \
+	+app_update ${SERVER_ID} validate +quit; then
+
+		echo -e "\nRequested server has been installed to ${SERVER_ROOT}\n"
+
+	else
+
+		echo -e "\nServer installation failed!"
+
+	done
+}
+
+
 main()
 {
 	
@@ -245,8 +392,9 @@ main()
 	# Check for necessary items
 	check_rereqs
 	
-	# Check for steamcmd
+	# Set root dirs
 	STEAMCMD_ROOT="${HOME}/steamcmd"
+	SERVER_ROOT="${STEAMCMD_ROOT}/servers"
 
 	if [[ ! -f "${STEAMCMD_ROOT}/steamcmd.sh" ]]; then
 
@@ -255,46 +403,19 @@ main()
 	fi
 
 	#################################################
-	# steamcmd wrapper fucntions
+	# steamcmd wrapper fucnctions
 	#################################################
 
 	# Execute steamcmd for outlined functions
 
 	if [[ ${DOWNLOAD_FILES} == "true "]]; then
 
-		# get game files via steam (you must own the game!)
-		echo -e "\n==> Acquiring files via Steam. You must own the game!"
-		read -erp "    Steam username: " STEAM_LOGIN_NAME
-		echo ""
+		download_game_files
 
-		# Download
-		# steam cmd likes to put the files in the same directory as the script
+	elif [[ ${GAME_SERVER} == "true "]]; then
 	
-		if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
-	
-	                # let this be a default
-	                # If this is not set, the path will be $HOME/Steam/steamapps/common/
-	                STEAM_DATA_FILES="default directory"
-	                DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/"
-	
-	        fi
-
-		echo -e "==> Downloading game files to: ${DIRECTORY}"
-		sleep 2s
-	
-		TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
-		mkdir -p "${TEMP_DIRECTORY}"
-	
-		# run as steam user
-		${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
-		${PLATFORM} +login ${STEAM_LOGIN_NAME} +force_install_dir ${TEMP_DIRECTORY} \
-		+app_update ${GAME_APP_ID} validate +quit || exit 1
-
-		# Move files to actual directory
-		sudo cp -r ${TEMP_DIRECTORY}/* "${DIRECTORY}"
-	
-		# cleanup
-		rm -rf "${TEMP_DIRECTORY}"
+		# start serer installatino routine
+		install_game_server
 		
 	fi
 	
