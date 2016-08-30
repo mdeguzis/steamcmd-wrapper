@@ -120,6 +120,20 @@ while :; do
 	shift
 done
 
+detect_steamcmd()
+{
+
+	# Set root dirs
+	STEAMCMD_ROOT="${HOME}/steamcmd"
+	SERVER_ROOT="${STEAMCMD_ROOT}/servers"
+
+	if [[ ! -f "${STEAMCMD_ROOT}/steamcmd.sh" ]]; then
+
+		install_steamcmd
+
+	fi
+}
+
 install_steamcmd()
 {
 	
@@ -429,20 +443,6 @@ install_game_server()
 
 main()
 {
-	
-	#################################################
-	# Setup
-	#################################################
-	
-	# Set root dirs
-	STEAMCMD_ROOT="${HOME}/steamcmd"
-	SERVER_ROOT="${STEAMCMD_ROOT}/servers"
-
-	if [[ ! -f "${STEAMCMD_ROOT}/steamcmd.sh" ]]; then
-
-		install_steamcmd
-
-	fi
 
 	#################################################
 	# steamcmd wrapper fucnctions
@@ -452,17 +452,14 @@ main()
 
 	if [[ ${DOWNLOAD_FILES} == "true " ]]; then
 
+		detect_steamcmd
 		download_game_files
 
 	elif [[ ${GAME_SERVER} == "true" ]]; then
-	
-		# start serer installatino routine
+
+		detect_steamcmd
 		install_game_server
-		
+
 	fi
-	
+
 }
-
-# Start wrapper
-main
-
