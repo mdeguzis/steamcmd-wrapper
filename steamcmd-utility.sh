@@ -124,7 +124,15 @@ install_steamcmd()
 {
 	
 	# Check Distro
-	DISTRO_CHECK=$(cat /etc/*-release | awk -F"=" '/DISTRIB_ID/{print $2}')
+	# Use lsb_release and /etc/*-release as a backup
+	DISTRO_CHECK=$(lsb_relese -si)
+
+	if [[ "${DISTRO_CHECK}" == "" ]]; then
+
+		# try /etc/*-release
+		DISTRO_CHECK=$(cat /etc/*-release | awk -F"=" '/DISTRIB_ID/{print $2}')
+
+	fi
 
 	# Check for multilib
 	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" ]]; then
