@@ -2,15 +2,15 @@
 #-------------------------------------------------------------------------------
 # Author:	Michael DeGuzis
 # Git:		https://github.com/ProfessorKaos64/steamcmd-wrapper
-# Scipt name:	steamcmd-utility.sh
+# Scipt name:	steamcmd-wrapper.sh
 # Script Ver:	0.3.8
 # Description:	Wrapper around steamcmd for common functions
 #		Ex. Downloads a game from Steam, based on it's AppID, useful for
 #               for on-the-go situations, or free-to-play when you can't 
 #               load the client.
 #
-# Usage:	./steamcmd-utility.sh [options]
-#		./steamcmd-utility.sh [-h|--help]
+# Usage:	./steamcmd-wrapper.sh [options]
+#		./steamcmd-wrapper.sh [-h|--help]
 
 # Set initial vars
 STEAMCMD_ROOT="${HOME}/steamcmd"
@@ -432,7 +432,7 @@ while :; do
 		--help|-h)
 			cat<<-EOF
 
-			Usage:	 ./steamcmd-utility.sh [options]
+			Usage:	 ./steamcmd-wrapper.sh [options]
 			Options:
 				-h|--help		This help text
 				--get|-g		downloads a game
