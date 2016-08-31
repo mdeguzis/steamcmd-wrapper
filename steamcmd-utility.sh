@@ -99,7 +99,7 @@ install_steamcmd()
 	fi
 	
 	# install steamcmd
-	echo -e "\n==> Installing steamcmd\n"
+	echo -e "\n==> Installing/Updating steamcmd\n"
 	mkdir -p "${STEAMCMD_ROOT}"
 	wget "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" -q -nc --show-progress
 	sudo tar -xf "steamcmd_linux.tar.gz" -C "${STEAMCMD_ROOT}"
@@ -370,6 +370,11 @@ while :; do
 			reset_steamcmd
 			;;
 
+		--update|-u)
+			# Almost the same as reset, overwrites files
+			install_steamcmd
+			;;
+
 		--get|-g)
 			STEAMCMD_REQUIRED="true"
 			DOWNLOAD_FILES="true"
@@ -414,7 +419,7 @@ while :; do
 			fi
 			;;
 
-		--steamcmd-commands)
+		--steamcmd-cmds)
 			# Internal use only
 			if [[ "$2" == "--update-list" ]]; then
 				STEAMCMD_UPDATE_CMD_LIST="true"
@@ -429,13 +434,15 @@ while :; do
 
 			Usage:	 ./steamcmd-utility.sh [options]
 			Options:
-				-h|--help		Help text
+				-h|--help		This help text
 				--get|-g		downloads a game
 				--game-server|s		Installs a game server
 				--appid|-a 		[AppID] 
 				--platform|-p		[Platform] 
 				--directory|-d 		[TARGET_DIR]
-				--steamcmd-commands	steamcmd command list
+				--steamcmd-cmds		steamcmd command list
+				--reset|-r		Resinstall SteamCMD
+				--update|-u		Update SteamCMD
 
 			EOF
 			break
