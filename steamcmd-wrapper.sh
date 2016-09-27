@@ -490,3 +490,6 @@ main()
 	fi
 
 }
+
+# start main
+main
