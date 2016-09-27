@@ -476,9 +476,8 @@ main()
 	#################################################
 
 	# Execute steamcmd for outlined functions
+	if [[ ${DOWNLOAD_FILES} == "true" ]]; then
 	
-	if [[ ${DOWNLOAD_FILES} == "true " ]]; then
-
 		detect_steamcmd
 		download_game_files
 
