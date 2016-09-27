@@ -236,7 +236,7 @@ download_game_files()
 
         fi
 
-	echo -e "==> Downloading game files to: ${DIRECTORY}"
+	echo -e "==> Downloading game files to: ${DIRECTORY}\n"
 	sleep 2s
 
 	TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
