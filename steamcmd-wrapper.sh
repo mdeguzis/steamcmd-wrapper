@@ -112,7 +112,7 @@ reset_steamcmd()
 {
 
 	# Cleans out metadata cruft
-	echo -e "\n==> Reinstalling steamcmd" && sleep 2s
+	echo -e "\n==> Reinstalling steamcmd\n" && sleep 2s
 	# Backup (suppress output if it doesn't exist)
 	cp -r "${HOME}/.steam" "${HOME}/.steam.bak" &> /dev/null
 	# Remove
