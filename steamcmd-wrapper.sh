@@ -251,7 +251,7 @@ download_game_files()
 
 		# Move files to actual directory
 		sudo cp -r ${TEMP_DIRECTORY}/* "${DIRECTORY}"
-		echo "\nGame successfully downloaded to ${DIRECTORY}"
+		echo -e "\nGame successfully downloaded to ${DIRECTORY}"
 
 	else
 	
