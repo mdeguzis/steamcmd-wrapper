@@ -380,7 +380,7 @@ while :; do
 			DOWNLOAD_FILES="true"
 			;;
 
-		--game-server|s)
+		--game-server|-s)
 			STEAMCMD_REQUIRED="true"
 			GAME_SERVER="true"
 			;;
