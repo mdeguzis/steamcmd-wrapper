@@ -477,6 +477,12 @@ main()
 
 	# Execute steamcmd for outlined functions
 	if [[ ${DOWNLOAD_FILES} == "true" ]]; then
+
+		# AppID required
+		if [[ -z "${GAME_APP_ID}" ]]; then
+			echo "ERROR: --app-id required"
+			exit 1
+		fi
 	
 		detect_steamcmd
 		download_game_files
