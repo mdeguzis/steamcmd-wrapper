@@ -456,7 +456,6 @@ while :; do
 				-h|--help		This help text
 				--get|-g		downloads a game
 				--game-server|s		Installs a game server
-				--appid|-a 		[AppID] 
 				--platform|-p		[Platform] 
 				--directory|-d 		[TARGET_DIR]
 				--steamcmd-cmds		steamcmd command list
