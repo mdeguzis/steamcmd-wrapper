@@ -21,6 +21,7 @@ STEAMCMD_REQUIRED="false"
 GAME_SERVER="false"
 DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
 DATE_SHORT=$(date +%Y%m%d)
+OS=$(cat /etc/os-release | awk -F'=' '/^ID=/ {print $2}')
 
 detect_steamcmd()
 {
@@ -226,15 +227,18 @@ download_game_files()
 
 	# Download
 	# steam cmd likes to put the files in the same directory as the script
-
+	# Set default based on SteamOS or standard-Linux
 	if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
 
-                # let this be a default
-                # If this is not set, the path will be $HOME/Steam/steamapps/common/
-                STEAM_DATA_FILES="default directory"
-                DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/"
+		if [[ "${OS}" == "steamos" ]]; then
+			DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/"
 
-        fi
+		else
+			DIRECTORY="${HOME}/.local/share/Steam/steamapps/common/"
+
+		fi
+
+	fi
 
 	echo -e "==> Downloading game files to: ${DIRECTORY}\n"
 	sleep 2s
@@ -257,6 +261,14 @@ download_game_files()
 	
 		"Game download failed! Trying resetting steamcmd"
 
+	fi
+
+	# chown files
+	echo "Correcting permissions"
+	if [[ "${OS}" == "steamos" ]]; then
+		sudo chown -R steam:steam "${DIRECTORY}"
+	else
+		sudo chown -R ${USER}:${USER} "${DIRECTORY}"
 	fi
 
 	# cleanup
@@ -373,9 +385,26 @@ while :; do
 		--update|-u)
 			# Almost the same as reset, overwrites files
 			install_steamcmd
+			if [[ -n "$2" ]]; then
+				GAME_APP_ID=$2
+				# echo "INSTALL PATH: $DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
+				exit 1
+			fi
 			;;
 
 		--get|-g)
+			if [[ -n "$2" ]]; then
+				GAME_APP_ID=$2
+				# echo "INSTALL PATH: $DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --get|-g requires the AppID an argument.\n" >&2
+				exit 1
+			fi
+
 			STEAMCMD_REQUIRED="true"
 			DOWNLOAD_FILES="true"
 			;;
@@ -383,17 +412,6 @@ while :; do
 		--game-server|-s)
 			STEAMCMD_REQUIRED="true"
 			GAME_SERVER="true"
-			;;
-
-		--appid|-a)
-			if [[ -n "$2" ]]; then
-				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $DIRECTORY"
-				shift
-			else
-				echo -e "ERROR: --appid|-a requires an argument.\n" >&2
-				exit 1
-			fi
 			;;
 
 		--directory|-d)       # Takes an option argument, ensuring it has been specified.
@@ -408,7 +426,8 @@ while :; do
 			fi
 			;;
 
-		--platform|-p)       # Takes an option argument, ensuring it has been specified.
+		--platform|-p)
+			# Takes an option argument, ensuring it has been specified.
 			if [[ -n "$2" ]]; then
 				PLATFORM=$2
 				# echo "PLATFORM: $PLATFORM"
@@ -472,8 +491,10 @@ main()
 {
 
 	#################################################
-	# steamcmd wrapper fucnctions
+	# steamcmd wrapper functions
 	#################################################
+
+	echo "Runnning on: ${OS}"
 
 	# Execute steamcmd for outlined functions
 	if [[ ${DOWNLOAD_FILES} == "true" ]]; then
