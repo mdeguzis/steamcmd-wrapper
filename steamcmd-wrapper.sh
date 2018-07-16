@@ -13,7 +13,8 @@
 #		./steamcmd-wrapper.sh [-h|--help]
 
 # Set initial vars
-STEAMCMD_ROOT="${HOME}/steamcmd"
+STEAMCMD_ROOT="/opt/steamcmd"
+TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
 SERVER_ROOT="${STEAMCMD_ROOT}/servers"
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
@@ -108,11 +109,19 @@ install_steamcmd()
 	
 	# install steamcmd
 	echo -e "\n==> Installing/Updating steamcmd\n"
-	mkdir -p "${STEAMCMD_ROOT}"
+	sudo mkdir -p "${STEAMCMD_ROOT}"
+	# Update perms on folder to user
+	sudo chown ${USER}:${USER} "${STEAMCMD_ROOT}"
 	wget "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" -q -nc --show-progress
-	sudo tar -xf "steamcmd_linux.tar.gz" -C "${STEAMCMD_ROOT}"
+	tar -xf "steamcmd_linux.tar.gz" -C "${STEAMCMD_ROOT}"
 	rm -f "steamcmd_linux.tar.gz"
 
+	# Add steam to group for SteamOS (runs as steam)
+	if [[ "${OS}" == "steamos" ]]; then
+		echo "Updating group owner to steam (SteamOS)"
+		sudo chgrp -R steam "${STEAMCMD_ROOT}"
+		sudo chmod -R g+rwx "${STEAMCMD_ROOT}"
+	fi
 	
 }
 
@@ -245,18 +254,22 @@ download_game_files()
 	if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
 
 		if [[ "${OS}" == "steamos" ]]; then
-			FINAL_DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+			STEAM_ROOT="/home/steam"
+			MANIFEST_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps"
+			FINAL_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+			echo "Provisioning directory"
 			sudo mkdir -p "${FINAL_DIRECTORY}"
 
 		else
-			FINAL_DIRECTORY="${HOME}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+			STEAM_ROOT="${HOME}"
+			MANIFEST_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps"
+			FINAL_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
 			mkdir -p "${FINAL_DIRECTORY}"
 
 		fi
 
 	fi
 
-	TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
 	rm -rf "${TEMP_DIRECTORY}"
 	mkdir -p "${TEMP_DIRECTORY}"
 
@@ -281,11 +294,16 @@ download_game_files()
 		# Move files to actual directory
 		echo "Moving finished files..."
 		if [[ "${OS}" == "steamos" ]]; then
-			sudo cp -r ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}"
+			sudo rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
+			echo "Copying over app manifest..."
+			sudo find "${MANIFEST_DIRECTORY}" -name "*.acf" -exec cp "${APP_MANIFEST_DIR} {}\;"
 		else
-			cp -r ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}"
+			rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
+			echo "Copying over app manifest..."
+			find "${MANIFEST_DIRECTORY}" -name "*.acf" -exec cp "${APP_MANIFEST_DIR} {} \;"
 		fi
 		echo -e "\nGame successfully downloaded to ${FINAL_DIRECTORY}"
+		echo "If your game did not appear, check you are in online mode and/or restart Steam"
 
 	else
 	
@@ -297,6 +315,18 @@ download_game_files()
 	if [[ "${OS}" == "steamos" ]]; then
 		echo "Correcting permissions for SteamOS"
 		sudo chown -R steam:steam "${FINAL_DIRECTORY}"
+	fi
+
+	# Validate game files to slap Steam out of a daze and realize it has a new game
+	# The app manifest should be enough, but the idea here is to avoid having to 
+	# click install or restart steam
+	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_update ${GAME_APP_ID} \
+	-validate +quit; then
+		echo "Game validated"
+	else
+		echo "Game cold not be validated!"
+		exit 1
 	fi
 
 }
@@ -495,6 +525,8 @@ while :; do
 			Usage:	 ./steamcmd-wrapper.sh [options]
 			Options:
 				-h|--help		This help text
+				--info|-i		Fetch appid info
+				--status|-s		Fetch appid status info
 				--get|-g		downloads a game
 				--game-server|s		Installs a game server
 				--platform|-p		[Platform] 
@@ -530,11 +562,20 @@ done
 main()
 {
 
+	if [[ "${STEAMCMD_ROOT}/steam.sh" ]]; then
+		INSTALLED="yes"
+	else
+		INSTALLED="no"
+	fi
+
+	cat<<- _EOF_
 	#################################################
-	# steamcmd wrapper functions
+	# steamcmd-wrapper
+	# Running on: ${OS}
+	# Installed?: ${INSTALLED}
 	#################################################
 
-	echo "Runnning on: ${OS}"
+	_EOF_
 
 	# Execute steamcmd for outlined functions
 	if [[ ${TYPE} == "download" && ${ACTION} == "download-files" ]]; then
@@ -546,6 +587,12 @@ main()
 
 		detect_steamcmd
 		get_appid_info
+
+	elif [[ ${TYPE} == "status" && ${ACTION} == "fetch" ]]; then
+
+		read -erp "    Steam username: " STEAM_LOGIN_NAME
+		detect_steamcmd
+		get_appid_status
 
 	elif [[ ${TYPE} == "game-server" && ${ACTION} == "setup" ]]; then
 
