@@ -235,7 +235,9 @@ download_game_files()
 	# get game files via steam (you must own the game!)
 	echo -e "\n==> Acquiring files via Steam. You must own the game!"
 	read -erp "    Steam username: " STEAM_LOGIN_NAME
-	echo ""
+
+	# get proper install dir
+	INSTALL_DIR=$(${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | awk -F'"' '/installdir/ {print $4}')
 
 	# Download
 	# steam cmd likes to put the files in the same directory as the script
@@ -243,32 +245,47 @@ download_game_files()
 	if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
 
 		if [[ "${OS}" == "steamos" ]]; then
-			DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/"
+			FINAL_DIRECTORY="/home/steam/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+			sudo mkdir -p "${FINAL_DIRECTORY}"
 
 		else
-			DIRECTORY="${HOME}/.local/share/Steam/steamapps/common/"
+			FINAL_DIRECTORY="${HOME}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+			mkdir -p "${FINAL_DIRECTORY}"
 
 		fi
 
 	fi
 
-	echo -e "==> Downloading game files to: ${DIRECTORY}\n"
-	sleep 2s
-
 	TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
+	rm -rf "${TEMP_DIRECTORY}"
 	mkdir -p "${TEMP_DIRECTORY}"
 
 	# run steamcmd
 	# +app_license_request works around downloading free to play games
+	cat <<- _EOF_
+	
+	Steam login: ${STEAM_LOGIN_NAME}
+	TEMP_DIRECTORY: ${TEMP_DIRECTORY}
+	FINAL_DIRECTORY: ${FINAL_DIRECTORY}
+	_EOF_
+
+	read -erp "Press ENTER to continue..."
+	echo -e "\n==> Downloading game files to: ${TEMP_DIRECTORY}\n"
 
 	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
 	${PLATFORM} +login ${STEAM_LOGIN_NAME} +force_install_dir ${TEMP_DIRECTORY} \
 	+app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit; then
 
+		echo "Temp directory contents:"
+		ls -la "${TEMP_DIRECTORY}"
 		# Move files to actual directory
 		echo "Moving finished files..."
-		sudo cp -r ${TEMP_DIRECTORY}/* "${DIRECTORY}"
-		echo -e "\nGame successfully downloaded to ${DIRECTORY}"
+		if [[ "${OS}" == "steamos" ]]; then
+			sudo cp -r ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}"
+		else
+			cp -r ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}"
+		fi
+		echo -e "\nGame successfully downloaded to ${FINAL_DIRECTORY}"
 
 	else
 	
@@ -277,15 +294,10 @@ download_game_files()
 	fi
 
 	# chown files
-	echo "Correcting permissions"
 	if [[ "${OS}" == "steamos" ]]; then
-		sudo chown -R steam:steam "${DIRECTORY}"
-	else
-		sudo chown -R ${USER}:${USER} "${DIRECTORY}"
+		echo "Correcting permissions for SteamOS"
+		sudo chown -R steam:steam "${FINAL_DIRECTORY}"
 	fi
-
-	# cleanup
-	rm -rf "${TEMP_DIRECTORY}"
 
 }
 
@@ -393,8 +405,8 @@ while :; do
 		--directory|-d)       # Takes an option argument, ensuring it has been specified.
 			if [[ -n "$2" ]]; then
 				CUSTOM_DATA_PATH="true"
-				DIRECTORY=$2
-				# echo "INSTALL PATH: $DIRECTORY"
+				FINAL_DIRECTORY=$2
+				# echo "INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
@@ -405,7 +417,7 @@ while :; do
 		--get|-g)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $DIRECTORY"
+				# echo "INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --get|-g requires the AppID an argument.\n" >&2
@@ -424,7 +436,7 @@ while :; do
 		--info|-i)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $DIRECTORY"
+				# echo "INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --info|-i requires the AppID an argument.\n" >&2
@@ -455,7 +467,7 @@ while :; do
 		--update|-u)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $DIRECTORY"
+				# echo "INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
