@@ -254,6 +254,7 @@ download_game_files()
 	+app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit; then
 
 		# Move files to actual directory
+		echo "Moving finished files..."
 		sudo cp -r ${TEMP_DIRECTORY}/* "${DIRECTORY}"
 		echo -e "\nGame successfully downloaded to ${DIRECTORY}"
 
