@@ -134,22 +134,27 @@ show_steamcmd_commands()
 {
 	# Show existing list if already generated
 	if [[ -f "${STEAMCMD_ROOT}/steamcmdcommands.txt" ]]; then
-		less "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+		echo "Existing list found at ${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	else
 		echo -e "\nERROR: SteamCMD command list file not found. Generating...\n"
 		sleep 2s
 		generate_steamcmd_cmd_list
-		less "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+		echo "List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	fi
 	
 	# Update root listing if requested
 	if [[ "${STEAMCMD_UPDATE_CMD_LIST}" == "true" ]]; then
 
-		cp "${STEAMCMD_ROOT}/steamcmdcommands.txt" "${PWD}"
-		echo -e "\n==>Updating GitHub command listing\n"
-		git add steamcmdcommands.txt
-		git commit -m "Update steamcmd command list"
-		git push origin master
+		generate_steamcmd_cmd_list
+		echo "List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
+
+		if [[ "${GIT_PUSH}" == "true" ]]; then
+			cp "${STEAMCMD_ROOT}/steamcmdcommands.txt" "${PWD}"
+			echo -e "\n==>Updating GitHub command listing\n"
+			git add steamcmdcommands.txt
+			git commit -m "Update steamcmd command list"
+			git push origin master
+		fi
 
 	fi
 }
@@ -462,6 +467,10 @@ while :; do
 			# Internal use only
 			if [[ "$2" == "--update-list" ]]; then
 				STEAMCMD_UPDATE_CMD_LIST="true"
+			fi
+			
+			if [[ "$2" == "--git-push" || "$3" == "--git-push" ]]; then
+				GIT_PUSH="true"
 			fi
 
 			show_steamcmd_commands
