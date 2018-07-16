@@ -17,7 +17,6 @@ STEAMCMD_ROOT="${HOME}/steamcmd"
 SERVER_ROOT="${STEAMCMD_ROOT}/servers"
 DOWNLOAD_FILES="false"
 STEAMCMD_CMD_UPDATE_LIST="false"
-STEAMCMD_REQUIRED="false"
 GAME_SERVER="false"
 DATE_LONG=$(date +"%a, %d %b %Y %H:%M:%S %z")
 DATE_SHORT=$(date +%Y%m%d)
@@ -31,6 +30,14 @@ detect_steamcmd()
 		install_steamcmd
 
 	fi
+
+}
+
+get_appid_info()
+{
+
+	# TODO - parse JSON
+	${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | less
 
 }
 
@@ -378,20 +385,14 @@ install_game_server()
 while :; do
 	case $1 in
 
-		--reset-steamcmd|-r)
-			# Very useful if you restore SteamoS.
-			reset_steamcmd
-			;;
-
-		--update|-u)
-			# Almost the same as reset, overwrites files
-			install_steamcmd
+		--directory|-d)       # Takes an option argument, ensuring it has been specified.
 			if [[ -n "$2" ]]; then
-				GAME_APP_ID=$2
+				CUSTOM_DATA_PATH="true"
+				DIRECTORY=$2
 				# echo "INSTALL PATH: $DIRECTORY"
 				shift
 			else
-				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
+				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
 				exit 1
 			fi
 			;;
@@ -406,25 +407,26 @@ while :; do
 				exit 1
 			fi
 
-			STEAMCMD_REQUIRED="true"
-			DOWNLOAD_FILES="true"
+			TYPE="download"
+			ACTION="download-files"
 			;;
 
 		--game-server|-s)
-			STEAMCMD_REQUIRED="true"
-			GAME_SERVER="true"
+			TYPE="game-server"
+			ACTION="setup"
 			;;
 
-		--directory|-d)       # Takes an option argument, ensuring it has been specified.
+		--info|-i)
 			if [[ -n "$2" ]]; then
-				CUSTOM_DATA_PATH="true"
-				DIRECTORY=$2
+				GAME_APP_ID=$2
 				# echo "INSTALL PATH: $DIRECTORY"
 				shift
 			else
-				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
+				echo -e "ERROR: --info|-i requires the AppID an argument.\n" >&2
 				exit 1
 			fi
+			TYPE="info"
+			ACTION="fetch"
 			;;
 
 		--platform|-p)
@@ -435,6 +437,23 @@ while :; do
 				shift
 			else
 				echo -e "ERROR: --platform|-p requires an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
+
+		--reset-steamcmd|-r)
+			# Very useful if you restore SteamoS.
+			reset_steamcmd
+			;;
+
+		--update|-u)
+			if [[ -n "$2" ]]; then
+				GAME_APP_ID=$2
+				# echo "INSTALL PATH: $DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
 				exit 1
 			fi
 			;;
@@ -497,18 +516,17 @@ main()
 	echo "Runnning on: ${OS}"
 
 	# Execute steamcmd for outlined functions
-	if [[ ${DOWNLOAD_FILES} == "true" ]]; then
+	if [[ ${TYPE} == "download" && ${ACTION} == "download-files" ]]; then
 
-		# AppID required
-		if [[ -z "${GAME_APP_ID}" ]]; then
-			echo "ERROR: --app-id required"
-			exit 1
-		fi
-	
 		detect_steamcmd
 		download_game_files
 
-	elif [[ ${GAME_SERVER} == "true" ]]; then
+	elif [[ ${TYPE} == "info" && ${ACTION} == "fetch" ]]; then
+
+		detect_steamcmd
+		get_appid_info
+
+	elif [[ ${TYPE} == "game-server" && ${ACTION} == "setup" ]]; then
 
 		detect_steamcmd
 		install_game_server
