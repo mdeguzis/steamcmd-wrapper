@@ -307,11 +307,11 @@ download_game_files()
 		if [[ "${OS}" == "steamos" ]]; then
 			sudo rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
 			echo "Copying over app manifest..."
-			sudo find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;"
+			sudo find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;
 		else
 			rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
 			echo "Copying over app manifest..."
-			find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} {} \;"
+			find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;
 		fi
 		echo -e "\nGame successfully downloaded to ${FINAL_DIRECTORY}"
 		echo "If your game did not appear, check you are in online mode and/or restart Steam"
