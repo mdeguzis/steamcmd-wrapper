@@ -253,6 +253,10 @@ download_game_files()
 
 	# get proper install dir
 	INSTALL_DIR=$(${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | awk -F'"' '/installdir/ {print $4}')
+	if [[ -z ${INSTALL_DIR} ]]; then
+		echo "Could not detect game installation directory!"
+		exit 1
+	fi
 
 	# Download
 	# steam cmd likes to put the files in the same directory as the script
@@ -286,6 +290,7 @@ download_game_files()
 	Steam login: ${STEAM_LOGIN_NAME}
 	TEMP_DIRECTORY: ${TEMP_DIRECTORY}
 	FINAL_DIRECTORY: ${FINAL_DIRECTORY}
+	MANIFEST_DIRECTORY: ${MANIFEST_DIRECTORY}
 	_EOF_
 
 	read -erp "Press ENTER to continue..."
@@ -302,18 +307,18 @@ download_game_files()
 		if [[ "${OS}" == "steamos" ]]; then
 			sudo rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
 			echo "Copying over app manifest..."
-			sudo find "${MANIFEST_DIRECTORY}" -name "*.acf" -exec cp "${APP_MANIFEST_DIR} {}\;"
+			sudo find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;"
 		else
 			rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
 			echo "Copying over app manifest..."
-			find "${MANIFEST_DIRECTORY}" -name "*.acf" -exec cp "${APP_MANIFEST_DIR} {} \;"
+			find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} {} \;"
 		fi
 		echo -e "\nGame successfully downloaded to ${FINAL_DIRECTORY}"
 		echo "If your game did not appear, check you are in online mode and/or restart Steam"
 
 	else
-	
 		"Game download failed! Trying resetting steamcmd"
+		exit 1
 
 	fi
 
