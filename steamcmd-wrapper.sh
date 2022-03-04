@@ -317,7 +317,7 @@ download_game_files()
 		echo "If your game did not appear, check you are in online mode and/or restart Steam"
 
 	else
-		"Game download failed! Trying resetting steamcmd"
+		echo "Game download failed! Trying resetting steamcmd"
 		exit 1
 
 	fi
