@@ -3,7 +3,7 @@
 # Author:	Michael DeGuzis
 # Git:		https://github.com/ProfessorKaos64/steamcmd-wrapper
 # Scipt name:	steamcmd-wrapper.sh
-# Script Ver:	0.3.8
+# Script Ver:	0.3.9
 # Description:	Wrapper around steamcmd for common functions
 #		Ex. Downloads a game from Steam, based on it's AppID, useful for
 #               for on-the-go situations, or free-to-play when you can't 
@@ -101,6 +101,10 @@ install_steamcmd()
 
 	elif [[ "${DISTRO_CHECK}" == "Arch" || "${DISTRO_CHECK}" == "chimeraos" ]]; then
 
+		if [[ "${DISTRO_CHECK}" == "chimeraos" ]]; then
+			echo "Need to unlock system files for ChimeraOS first with frzr-unlock..."
+			sudo frzr-unlock
+		fi
 		sudo pacman -S wget tar grep lib32-gcc-libs
 		
 	elif [[ "${DISTRO_CHECK}" == "Fedora" ]]; then
@@ -534,7 +538,7 @@ while :; do
 				--platform|-p		[Platform] 
 				--directory|-d 		[TARGET_DIR]
 				--steamcmd-cmds		steamcmd command list
-				--reset|-r		Resinstall SteamCMD
+				--reset-steamcmd|-r	Resinstall SteamCMD
 				--update|-u		Update SteamCMD
 
 			EOF
