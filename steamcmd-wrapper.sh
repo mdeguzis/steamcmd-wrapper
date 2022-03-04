@@ -12,6 +12,8 @@
 # Usage:	./steamcmd-wrapper.sh [options]
 #		./steamcmd-wrapper.sh [-h|--help]
 
+set -e
+
 # Set initial vars
 STEAMCMD_ROOT="/opt/steamcmd"
 TEMP_DIRECTORY="${STEAMCMD_ROOT}/steamcmd_tmp"
@@ -70,7 +72,7 @@ install_steamcmd()
 
 		fi
 
-	elif [[ "${DISTRO_CHECK}" == "Arch" ]]; then
+	elif [[ "${DISTRO_CHECK}" == "Arch" || "${DISTRO_CHECK}" == "chimeraos" ]]; then
 
 		MULTIARCH=$(grep '\[multilib\]' /etc/pacman.conf)
 		if [[ "${MULTIARCH}" == "" ]]; then
@@ -80,7 +82,7 @@ install_steamcmd()
 			echo "Include = /etc/pacman.d/mirrorlist"  | "sudo tee -a /etc/pacman.conf"
 			echo -e "Updating for multiarch\n" 
 			sleep 2s
-			pacman -Syy
+			sudo pacman -Syy
 
 		fi
 
@@ -97,9 +99,9 @@ install_steamcmd()
 
 		sudo apt-get install -y --force-yes lib32gcc1 libc6-i386 wget tar
 
-	elif [[ "${DISTRO_CHECK}" == "Arch" ]]; then
+	elif [[ "${DISTRO_CHECK}" == "Arch" || "${DISTRO_CHECK}" == "chimeraos" ]]; then
 
-		pacman -S wget tar grep lib32-gcc-libs
+		sudo pacman -S wget tar grep lib32-gcc-libs
 		
 	elif [[ "${DISTRO_CHECK}" == "Fedora" ]]; then
 
