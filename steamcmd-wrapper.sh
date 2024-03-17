@@ -505,6 +505,17 @@ while :; do
 			reset_steamcmd
 			;;
 
+		--update|-u)
+			if [[ -n "$2" ]]; then
+				GAME_APP_ID=$2
+				# echo "INSTALL PATH: $FINAL_DIRECTORY"
+				shift
+			else
+				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
 		--steamcmd-cmds)
 			# Internal use only
 			if [[ "$2" == "--update-list" ]]; then
@@ -533,6 +544,7 @@ while :; do
 				--directory|-d 		[TARGET_DIR]
 				--steamcmd-cmds		steamcmd command list
 				--reset-steamcmd|-r	Resinstall SteamCMD
+				--update|-u		Update SteamCMD
 
 			EOF
 			break
