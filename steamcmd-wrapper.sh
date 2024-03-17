@@ -50,16 +50,16 @@ install_steamcmd()
 	# Check Distro
 	# Use lsb_release and /etc/*-release as a backup
 	DISTRO_CHECK=$(lsb_release -si)
+	ID_LIKE=$(cat /etc/*-release | awk -F"=" '/ID_LIKE/{print $2}' | sed 's/"//'g)
 
 	if [[ "${DISTRO_CHECK}" == "" ]]; then
-
 		# try /etc/*-release
 		DISTRO_CHECK=$(cat /etc/*-release | awk -F"=" '/DISTRIB_ID/{print $2}')
 
 	fi
 
 	# Check for multilib
-	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" ]]; then
+	if [[ "${DISTRO_CHECK}" == "Debian" || "${DISTRO_CHECK}" == "SteamOS" || "${ID_LIKE}" =~ "debian" ]]; then
 
 		MULTIARCH=$(dpkg --print-foreign-architectures | grep i386)
 		if [[ "${MULTIARCH}" == "" ]]; then
@@ -78,8 +78,8 @@ install_steamcmd()
 		if [[ "${MULTIARCH}" == "" ]]; then
 
 			echo -e "\nMultiarch not found!\n"
-			echo "[multilib]" | sudo tee -a "/etc/pacman.conf"
-			echo "Include = /etc/pacman.d/mirrorlist"  | "sudo tee -a /etc/pacman.conf"
+			echo "[INFO] [multilib]" | sudo tee -a "/etc/pacman.conf"
+			echo "[INFO] Include = /etc/pacman.d/mirrorlist"  | "sudo tee -a /etc/pacman.conf"
 			echo -e "Updating for multiarch\n" 
 			sleep 2s
 			sudo pacman -Syy
@@ -89,7 +89,9 @@ install_steamcmd()
 	else
 
 		# Catch non supported distros
-		echo -e "\nDistribution not currently supported!\n"
+		echo "[INFO] Distribution not currently supported!"
+		echo "[INFO] Distro: ${DISTRO_CHECK}"
+		echo "[INFO] ID like: ${ID_LIKE}"
 		exit 1
 
 	fi
@@ -102,7 +104,7 @@ install_steamcmd()
 	elif [[ "${DISTRO_CHECK}" == "Arch" || "${DISTRO_CHECK}" == "chimeraos" ]]; then
 
 		if [[ "${DISTRO_CHECK}" == "chimeraos" ]]; then
-			echo "Need to unlock system files for ChimeraOS first with frzr-unlock..."
+			echo "[INFO] Need to unlock system files for ChimeraOS first with frzr-unlock..."
 			sudo frzr-unlock
 		fi
 		sudo pacman -S wget tar grep lib32-gcc-libs
@@ -124,7 +126,7 @@ install_steamcmd()
 
 	# Add steam to group for SteamOS (runs as steam)
 	if [[ "${OS}" == "steamos" ]]; then
-		echo "Updating group owner to steam (SteamOS)"
+		echo "[INFO] Updating group owner to steam (SteamOS)"
 		sudo chgrp -R steam "${STEAMCMD_ROOT}"
 		sudo chmod -R g+rwx "${STEAMCMD_ROOT}"
 	fi
@@ -149,19 +151,19 @@ show_steamcmd_commands()
 {
 	# Show existing list if already generated
 	if [[ -f "${STEAMCMD_ROOT}/steamcmdcommands.txt" ]]; then
-		echo "Existing list found at ${STEAMCMD_ROOT}/steamcmdcommands.txt"
+		echo "[INFO] Existing list found at ${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	else
 		echo -e "\nERROR: SteamCMD command list file not found. Generating...\n"
 		sleep 2s
 		generate_steamcmd_cmd_list
-		echo "List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
+		echo "[INFO] List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	fi
 	
 	# Update root listing if requested
 	if [[ "${STEAMCMD_UPDATE_CMD_LIST}" == "true" ]]; then
 
 		generate_steamcmd_cmd_list
-		echo "List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
+		echo "[INFO] List generated to: ${STEAMCMD_ROOT}/steamcmdcommands.txt"
 
 		if [[ "${GIT_PUSH}" == "true" ]]; then
 			cp "${STEAMCMD_ROOT}/steamcmdcommands.txt" "${PWD}"
@@ -197,11 +199,11 @@ generate_steamcmd_cmd_list()
 	
 	for LETTER in {a..z}
 	do
-		echo "./steamcmd.sh +login anonymous +find ${LETTER} +quit"
+		echo "[INFO] ./steamcmd.sh +login anonymous +find ${LETTER} +quit"
 		./steamcmd.sh +login anonymous +find ${LETTER} +quit > "${STEAMCMD_ROOT}/tmp/${LETTER}"
-		echo "Creating list for LETTER ${LETTER}."
+		echo "[INFO] Creating list for LETTER ${LETTER}."
 		sleep 0.5
-		echo ""
+		echo "[INFO] "
 
 		# Commands List
 		cat "${STEAMCMD_ROOT}/tmp/${LETTER}" > "${STEAMCMD_ROOT}/tmp/${LETTER}commands"
@@ -216,7 +218,7 @@ generate_steamcmd_cmd_list()
 		cat "${STEAMCMD_ROOT}/tmp/${LETTER}convars" >> "${STEAMCMD_ROOT}/tmp/convarslistraw"
 	done
 
-	echo "Sorting lists."
+	echo "[INFO] Sorting lists."
 	cd "${STEAMCMD_ROOT}/tmp"
 	sort -n commandslistraw > commandslistsort
 	uniq commandslistsort > commandslisttidy
@@ -226,20 +228,20 @@ generate_steamcmd_cmd_list()
 	uniq convarslistsort > convarslisttidy
 	cat convarslisttidy|tr -d '\000-\011\013\014\016-\037'| sed 's/\[0m//g'|sed 's/\[1m//g'> convarslist
 	
-	echo "Generating output."
+	echo "[INFO] Generating output."
 	
 	# Time stamp list
-	echo "List generated on:" > "${STEAMCMD_ROOT}/steamcmdcommands.txt"
-	echo "${DATE_LONG}" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
-	echo "ConVars:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "[INFO] List generated on:" > "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "[INFO] ${DATE_LONG}" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "[INFO] ConVars:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	cat  "convarslist" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
-	echo "Commands:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
+	echo "[INFO] Commands:" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
 	cat  "commandslist" >> "${STEAMCMD_ROOT}/steamcmdcommands.txt"
-	echo "ConVars:"
+	echo "[INFO] ConVars:"
 	cat  "convarslist"
-	echo "Commands:"
+	echo "[INFO] Commands:"
 	cat  "commandslist"
-	echo "Tidy up."
+	echo "[INFO] Tidy up."
 	rm -rf "${STEAMCMD_ROOT}/tmp"
 	rm -rf "${STEAMCMD_ROOT}/steamcmd"
 	
@@ -249,7 +251,8 @@ update_game_files()
 {
 	read -erp "    Steam username: " STEAM_LOGIN_NAME
 	${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
-	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_license_request \
+	${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit
 }
 
 download_game_files()
@@ -261,7 +264,7 @@ download_game_files()
 	# get proper install dir
 	INSTALL_DIR=$(${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | awk -F'"' '/installdir/ {print $4}')
 	if [[ -z ${INSTALL_DIR} ]]; then
-		echo "Could not detect game installation directory!"
+		echo "[INFO] Could not detect game installation directory!"
 		exit 1
 	fi
 
@@ -269,22 +272,10 @@ download_game_files()
 	# steam cmd likes to put the files in the same directory as the script
 	# Set default based on SteamOS or standard-Linux
 	if [[ "${CUSTOM_DATA_PATH}" != "true" ]]; then
-
-		if [[ "${OS}" == "steamos" ]]; then
-			STEAM_ROOT="/home/steam"
-			MANIFEST_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps"
-			FINAL_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
-			echo "Provisioning directory"
-			sudo mkdir -p "${FINAL_DIRECTORY}"
-
-		else
-			STEAM_ROOT="${HOME}"
-			MANIFEST_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps"
-			FINAL_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
-			mkdir -p "${FINAL_DIRECTORY}"
-
-		fi
-
+		STEAM_ROOT="${HOME}"
+		MANIFEST_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps"
+		FINAL_DIRECTORY="${STEAM_ROOT}/.local/share/Steam/steamapps/common/${INSTALL_DIR}"
+		mkdir -p "${FINAL_DIRECTORY}"
 	fi
 
 	rm -rf "${TEMP_DIRECTORY}"
@@ -303,47 +294,49 @@ download_game_files()
 	read -erp "Press ENTER to continue..."
 	echo -e "\n==> Downloading game files to: ${TEMP_DIRECTORY}\n"
 
-	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
-	${PLATFORM} +login ${STEAM_LOGIN_NAME} +force_install_dir ${TEMP_DIRECTORY} \
-	+app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit; then
+	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType +force_install_dir \
+		${TEMP_DIRECTORY} ${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_license_request \
+		${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit; then
 
-		echo "Temp directory contents:"
+		echo "[INFO] Temp directory contents:"
 		ls -la "${TEMP_DIRECTORY}"
 		# Move files to actual directory
-		echo "Moving finished files..."
+		echo "[INFO] Moving finished files..."
 		if [[ "${OS}" == "steamos" ]]; then
-			sudo rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
-			echo "Copying over app manifest..."
+			sudo rsync -ra --remove-source-files ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
+			echo "[INFO] Copying over app manifest..."
 			sudo find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;
 		else
-			rsync -ra ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
-			echo "Copying over app manifest..."
+			rsync -ra --remove-source-files ${TEMP_DIRECTORY}/* "${FINAL_DIRECTORY}" --exclude "steamapps"
+			echo "[INFO] Copying over app manifest..."
 			find "${TEMP_DIRECTORY}/steamapps" -name "*.acf" -exec cp -v {} ${MANIFEST_DIRECTORY} \;
 		fi
 		echo -e "\nGame successfully downloaded to ${FINAL_DIRECTORY}"
-		echo "If your game did not appear, check you are in online mode and/or restart Steam"
+		echo "[INFO] If your game did not appear, check you are in online mode and/or restart Steam"
+		rm -rf ${TEMP_DIRECTORY}/*
 
 	else
-		echo "Game download failed! Trying resetting steamcmd"
+		echo "[INFO] Game download failed! Trying resetting steamcmd"
 		exit 1
 
 	fi
 
 	# chown files
 	if [[ "${OS}" == "steamos" ]]; then
-		echo "Correcting permissions for SteamOS"
+		echo "[INFO] Correcting permissions for SteamOS"
 		sudo chown -R steam:steam "${FINAL_DIRECTORY}"
 	fi
 
 	# Validate game files to slap Steam out of a daze and realize it has a new game
 	# The app manifest should be enough, but the idea here is to avoid having to 
 	# click install or restart steam
+	echo "[INFO] Validating game files"
 	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
 	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_update ${GAME_APP_ID} \
 	-validate +quit; then
-		echo "Game validated"
+		echo "[INFO] Game validated"
 	else
-		echo "Game cold not be validated!"
+		echo "[INFO] Game cold not be validated!"
 		exit 1
 	fi
 
@@ -377,54 +370,54 @@ install_game_server()
 
 		case ${GAME_SERVER} in
 
-			1) echo "Now installing Team Fortress 2 server."
+			1) echo "[INFO] Now installing Team Fortress 2 server."
 			SERVER_GAME="Team Fortress 2"
 			SERVER_ID=232250
 			break
 			;;
 
-			2) echo "Now installing Counter Strike Source server."
+			2) echo "[INFO] Now installing Counter Strike Source server."
 			SERVER_GAME="Counter-Strike Source"
 			SERVER_ID=232330
 			break
 			;;
 
-			3) echo "Now installing CS:GO server."
+			3) echo "[INFO] Now installing CS:GO server."
 			SERVER_GAME="CS:GO"
 			SERVER_ID=740
 			break
 			;;
 
-			4) echo "Now installing Garry's Mod server."
+			4) echo "[INFO] Now installing Garry's Mod server."
 			SERVER_GAME="Garry's Mod"
 			SERVER_ID=4020
 			break
 			;;
 
-			5) echo "Now installing Left 4 Dead 2 server."
+			5) echo "[INFO] Now installing Left 4 Dead 2 server."
 			SERVER_GAME="Left 4 Dead 2"
 			SERVER_ID=222860
 			break
 			;;
 
-			6) echo "Now installing DOD:S server."
+			6) echo "[INFO] Now installing DOD:S server."
 			SERVER_GAME="DOD:S"
 			SERVER_ID=232290
 			break
 			;;
 
-			7) echo "Now installing Half-Life server."
+			7) echo "[INFO] Now installing Half-Life server."
 			SERVER_GAME="Half-Life"
 			SERVER_ID=90
 			break
 			;;
 
-			8) echo "Now installing other server."
+			8) echo "[INFO] Now installing other server."
 			read -erp "Please enter a server ID: " SERVER_ID
 			break
 			;;
 
-			*) echo "Please enter a valid option."
+			*) echo "[INFO] Please enter a valid option."
 			continue
 			;;
 		esac
@@ -454,7 +447,7 @@ while :; do
 			if [[ -n "$2" ]]; then
 				CUSTOM_DATA_PATH="true"
 				FINAL_DIRECTORY=$2
-				# echo "INSTALL PATH: $FINAL_DIRECTORY"
+				# echo "[INFO] INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --directory|-d requires an argument.\n" >&2
@@ -465,7 +458,7 @@ while :; do
 		--get|-g)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $FINAL_DIRECTORY"
+				# echo "[INFO] INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --get|-g requires the AppID an argument.\n" >&2
@@ -484,7 +477,7 @@ while :; do
 		--info|-i)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $FINAL_DIRECTORY"
+				# echo "[INFO] INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --info|-i requires the AppID an argument.\n" >&2
@@ -498,7 +491,7 @@ while :; do
 			# Takes an option argument, ensuring it has been specified.
 			if [[ -n "$2" ]]; then
 				PLATFORM=$2
-				# echo "PLATFORM: $PLATFORM"
+				# echo "[INFO] PLATFORM: $PLATFORM"
 				shift
 			else
 				echo -e "ERROR: --platform|-p requires an argument.\n" >&2
@@ -515,7 +508,7 @@ while :; do
 		--update|-u)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
-				# echo "INSTALL PATH: $FINAL_DIRECTORY"
+				# echo "[INFO] INSTALL PATH: $FINAL_DIRECTORY"
 				shift
 			else
 				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
