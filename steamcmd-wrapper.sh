@@ -245,6 +245,13 @@ generate_steamcmd_cmd_list()
 	
 }
 
+update_game_files()
+{
+	read -erp "    Steam username: " STEAM_LOGIN_NAME
+	${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_license_request ${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit
+}
+
 download_game_files()
 {
 	# get game files via steam (you must own the game!)
@@ -514,6 +521,8 @@ while :; do
 				echo -e "ERROR: --update|-u requires the AppID an argument.\n" >&2
 				exit 1
 			fi
+			TYPE="update"
+			ACTION="update-files"
 			;;
 
 		--steamcmd-cmds)
@@ -544,7 +553,7 @@ while :; do
 				--directory|-d 		[TARGET_DIR]
 				--steamcmd-cmds		steamcmd command list
 				--reset-steamcmd|-r	Resinstall SteamCMD
-				--update|-u		Update SteamCMD
+				--update|-u		Update a game
 
 			EOF
 			break
@@ -593,6 +602,11 @@ main()
 
 		detect_steamcmd
 		download_game_files
+
+	elif [[ ${TYPE} == "update" && ${ACTION} == "update-files" ]]; then
+
+		detect_steamcmd
+		update_game_files
 
 	elif [[ ${TYPE} == "info" && ${ACTION} == "fetch" ]]; then
 
