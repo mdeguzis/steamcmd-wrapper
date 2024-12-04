@@ -277,20 +277,22 @@ list_owned_games()
 	while read line
 	do
 		# TODO - add rate limit / throttling retry handling...
-		if echo "${line}" | grep -q "^License packageID"; then
-			app_id=$(echo "${line}" | cut -d" " -f3 | sed 's/://g')
-			echo "[INFO] Analyzing App ID: ${app_id}"
-			app_info=$(get_appid_info ${app_id})
-			if [[ -z "${app_info}" ]]; then
-				continue
-			else
-				# This should be a VDF entry, it's not valid json
-				# Lazily extract for now
-				# It's the first result, as there are multiple name fields here
-				game_name=$(echo "${app_info}" | awk -F'"' '/"name"/ {print $4; exit}')
-				echo "[INFO] Found Game: ${game_name} (AppID: '${app_id}')"
-				app_ids+=("${app_id}")
-			fi
+		if echo "${line}" | grep -q "^- Apps"; then
+			IFS=', ' read -r -a app_ids <<< "$(echo "$line" | grep -oE '[0-9]+' | tr '\n' ' ')"
+			for app_id in "${app_ids[@]}"; do
+				#echo "[INFO] Analyzing App ID: ${app_id}"
+				app_info=$(get_appid_info ${app_id})
+				if [[ -z "${app_info}" ]]; then
+					continue
+				else
+					# This should be a VDF entry, it's not valid json
+					# Lazily extract for now
+					# It's the first result, as there are multiple name fields here
+					game_name=$(echo "${app_info}" | awk -F'"' '/"name"/ {print $4; exit}')
+					echo "[INFO] Found Game: ${game_name} (AppID: '${app_id}')"
+					app_ids+=("${app_id}")
+				fi
+			done
 		fi
 	done
 }
