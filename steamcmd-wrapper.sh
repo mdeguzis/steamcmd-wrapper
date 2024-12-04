@@ -334,6 +334,11 @@ download_game_files()
 	FINAL_DIRECTORY: ${FINAL_DIRECTORY}
 	MANIFEST_DIRECTORY: ${MANIFEST_DIRECTORY}
 	_EOF_
+	if $(${backup}); then
+		BACKUP_DIRECTORY="${HOME}/Games/steam-backups/$(basename "${FINAL_DIRECTORY}")"
+		mkdir -p "${BACKUP_DIRECTORY}"
+		echo "BACKUP_DIRECTORY: ${BACKUP_DIRECTORY}"
+	fi
 
 	read -erp "Press ENTER to continue..."
 	echo -e "\n==> Downloading game files to: ${TEMP_DIRECTORY}\n"
@@ -383,6 +388,13 @@ download_game_files()
 	else
 		echo "[INFO] Game cold not be validated!"
 		exit 1
+	fi
+
+	if $(${backup}); then
+		# copy to backup dir
+		echo "[INFO] Backing up game to ${BACKUP_DIRECTORY}"
+		rsync -rav "${FINAL_DIRECTORY}/" "${BACKUP_DIRECTORY}"
+		echo "[INFO] Game backup up to ${BACKUP_DIRECTORY} complete!"
 	fi
 
 }
@@ -519,6 +531,10 @@ while :; do
 			ACTION="setup"
 			;;
 
+		--backup|-b)
+			backup=true
+			;;
+
 		--list-games|-l)
 			TYPE="info"
 			ACTION="list-games"
@@ -603,6 +619,7 @@ while :; do
 				--info|-i		  Fetch appid info
 				--status|-s		  Fetch appid status info
 				--get|-g		  downloads a game
+				--backup |-b		  Save downloaded files to backup dir
 				--list-games|-l	          List owned games
 				--game-server|s		  Installs a game server
 				--platform|-p		  [Platform] 
