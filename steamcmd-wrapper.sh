@@ -38,9 +38,13 @@ detect_steamcmd()
 
 get_appid_info()
 {
-
-	# TODO - parse JSON
-	${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | less
+	local app_id=$1
+	if [[ -z "${STEAM_LOGIN_NAME}" ]]; then
+		read -erp "    Steam username: " STEAM_LOGIN_NAME
+	fi
+	${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_info_print ${app_id} +quit \
+	| awk '/^\s*\"[0-9]+\"$/,/^\}$/'
 
 }
 
@@ -249,17 +253,54 @@ generate_steamcmd_cmd_list()
 
 update_game_files()
 {
-	read -erp "    Steam username: " STEAM_LOGIN_NAME
+	# To list owned Steam games using SteamCMD, use a combination of SteamCMD commands 
+	# and additional utilities for more readable output. However, SteamCMD alone does 
+	# not have a direct "list owned games" command. Instead, we can retrieve the 
+	# owned app IDs through licenses or other API-related methods. 
+	if [[ -z "${STEAM_LOGIN_NAME}" ]]; then
+		read -erp "    Steam username: " STEAM_LOGIN_NAME
+	fi
 	${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
 	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_license_request \
 	${GAME_APP_ID} +app_update ${GAME_APP_ID} validate +quit
+}
+
+list_owned_games()
+{
+	app_ids=()
+	echo "[INFO] Listing owned games"
+	if [[ -z "${STEAM_LOGIN_NAME}" ]]; then
+		read -erp "    Steam username: " STEAM_LOGIN_NAME
+	fi
+	${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
+	${PLATFORM} +login ${STEAM_LOGIN_NAME} +licenses_print validate +quit |  \
+	while read line
+	do
+		if echo "${line}" | grep -q "^License packageID"; then
+			app_id=$(echo "${line}" | cut -d" " -f3 | sed 's/://g')
+			echo "[INFO] Analyzing App ID: ${app_id}"
+			app_info=$(get_appid_info ${app_id})
+			if [[ -z "${app_info}" ]]; then
+				continue
+			else
+				# This should be a VDF entry, it's not valid json
+				# Lazily extract for now
+				# It's the first result, as there are multiple name fields here
+				game_name=$(echo "${app_info}" | awk -F'"' '/"name"/ {print $4; exit}')
+				echo "[INFO] Found Game: ${game_name} (AppID: '${app_id}')"
+				app_ids+=("${app_id}")
+			fi
+		fi
+	done
 }
 
 download_game_files()
 {
 	# get game files via steam (you must own the game!)
 	echo -e "\n==> Acquiring files via Steam. You must own the game!"
-	read -erp "    Steam username: " STEAM_LOGIN_NAME
+	if [[ -z "${STEAM_LOGIN_NAME}" ]]; then
+		read -erp "    Steam username: " STEAM_LOGIN_NAME
+	fi
 
 	# get proper install dir
 	INSTALL_DIR=$(${STEAMCMD_ROOT}/steamcmd.sh +app_info_print ${GAME_APP_ID} +quit | awk -F'"' '/installdir/ {print $4}')
@@ -332,8 +373,8 @@ download_game_files()
 	# click install or restart steam
 	echo "[INFO] Validating game files"
 	if ${STEAMCMD_ROOT}/steamcmd.sh +@sSteamCmdForcePlatformType \
-	${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_update ${GAME_APP_ID} \
-	-validate +quit; then
+		${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_update ${GAME_APP_ID} \
+		-validate +quit; then
 		echo "[INFO] Game validated"
 	else
 		echo "[INFO] Game cold not be validated!"
@@ -474,6 +515,12 @@ while :; do
 			ACTION="setup"
 			;;
 
+		--list-games|-l)
+			TYPE="info"
+			ACTION="list-games"
+			;;
+
+
 		--info|-i)
 			if [[ -n "$2" ]]; then
 				GAME_APP_ID=$2
@@ -504,6 +551,17 @@ while :; do
 			# Very useful if you restore SteamoS.
 			reset_steamcmd
 			;;
+
+		--username)
+			if [[ -n "$2" ]]; then
+				STEAM_LOGIN_NAME=$2
+				shift
+			else
+				echo -e "ERROR: --username requires the AppID an argument.\n" >&2
+				exit 1
+			fi
+			;;
+
 
 		--update|-u)
 			if [[ -n "$2" ]]; then
@@ -537,16 +595,18 @@ while :; do
 
 			Usage:	 ./steamcmd-wrapper.sh [options]
 			Options:
-				-h|--help		This help text
-				--info|-i		Fetch appid info
-				--status|-s		Fetch appid status info
-				--get|-g		downloads a game
-				--game-server|s		Installs a game server
-				--platform|-p		[Platform] 
-				--directory|-d 		[TARGET_DIR]
-				--steamcmd-cmds		steamcmd command list
-				--reset-steamcmd|-r	Resinstall SteamCMD
-				--update|-u		Update a game
+				-h|--help		  This help text
+				--info|-i		  Fetch appid info
+				--status|-s		  Fetch appid status info
+				--get|-g		  downloads a game
+				--list-games|-l	          List owned games
+				--game-server|s		  Installs a game server
+				--platform|-p		  [Platform] 
+				--directory|-d 		  [TARGET_DIR]
+				--steamcmd-cmds		  steamcmd command list
+				--reset-steamcmd|-r	  Resinstall SteamCMD
+				--update|-u		  Update a game
+				--username		  Steam username to use for commands
 
 			EOF
 			break
@@ -604,7 +664,12 @@ main()
 	elif [[ ${TYPE} == "info" && ${ACTION} == "fetch" ]]; then
 
 		detect_steamcmd
-		get_appid_info
+		get_appid_info ${GAME_APP_ID}
+
+	elif [[ ${TYPE} == "info" && ${ACTION} == "list-games" ]]; then
+
+		detect_steamcmd
+		list_owned_games
 
 	elif [[ ${TYPE} == "status" && ${ACTION} == "fetch" ]]; then
 
