@@ -379,6 +379,7 @@ download_game_files()
 		${PLATFORM} +login ${STEAM_LOGIN_NAME} +app_update ${GAME_APP_ID} \
 		-validate +quit; then
 		echo "[INFO] Game validated"
+		echo "[INFO] If you had Steam open, please restart Steam"
 	else
 		echo "[INFO] Game cold not be validated!"
 		exit 1
