@@ -276,6 +276,7 @@ list_owned_games()
 	${PLATFORM} +login ${STEAM_LOGIN_NAME} +licenses_print validate +quit |  \
 	while read line
 	do
+		# TODO - add rate limit / throttling retry handling...
 		if echo "${line}" | grep -q "^License packageID"; then
 			app_id=$(echo "${line}" | cut -d" " -f3 | sed 's/://g')
 			echo "[INFO] Analyzing App ID: ${app_id}"
